@@ -1,76 +1,95 @@
 package main
 
-import "fmt"
-
-// Liskov Substitution Principle
-
-type Sized interface {
-	GetWidth() int
-	SetWidth(with int)
-	GetHeight() int
-	SetHeight(height int)
+type Document struct {
 }
 
-type Rectangle struct {
-	width, height int
+type Machine interface {
+	Print(d Document)
+	Fax(d Document)
+	Scan(d Document)
 }
 
-func (r *Rectangle) GetWidth() int {
-	return r.width
+type MultiFunctionPrinter struct {
 }
 
-func (r *Rectangle) SetWidth(with int) {
-	r.width = with
+func (m MultiFunctionPrinter) Print(d Document) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (r *Rectangle) GetHeight() int {
-	return r.height
+func (m MultiFunctionPrinter) Fax(d Document) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (r *Rectangle) SetHeight(height int) {
-	r.height = height
+func (m MultiFunctionPrinter) Scan(d Document) {
+	//TODO implement me
+	panic("implement me")
 }
 
-type Square struct {
-	Rectangle
+type OldFashionedPrinter struct {
 }
 
-func NewSquare(size int) *Square {
-	sq := Square{}
-	sq.width = size
-	sq.height = size
-	return &sq
+func (o OldFashionedPrinter) Print(d Document) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s *Square) SetWidth(width int) {
-	s.width = width
-	s.height = width
+func (o OldFashionedPrinter) Fax(d Document) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s *Square) SetHeight(height int) {
-	s.width = height
-	s.height = height
+func (o OldFashionedPrinter) Scan(d Document) {
+	//TODO implement me
+	panic("implement me")
 }
 
-type Square2 struct {
-	size int // width, height
+// ISP
+type Printer interface {
+	Print(d Document)
 }
 
-func (s *Square2) Rectangle() Rectangle {
-	return Rectangle{s.size, s.size}
+type Scanner interface {
+	Scan(d Document)
 }
 
-func UseIt(sized Sized) {
-	width := sized.GetWidth()
-	sized.SetHeight(10)
-	expectedArea := 10 * width
-	actualArea := sized.GetWidth() * sized.GetHeight()
-	fmt.Print("Expected an area of ", expectedArea, ", but got ", actualArea, "\n")
+type MyPrinter struct {
 }
+
+func (m MyPrinter) Print(d Document) {
+
+}
+
+type Photocopier struct {
+}
+
+func (p Photocopier) Scan(d Document) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p Photocopier) Print(d Document) {
+	//TODO implement me
+	panic("implement me")
+}
+
+type MultiFunctionDevice interface {
+	Printer
+	Scanner
+	// Fax
+}
+
+// decorator
+type MultiFunctionMachine struct {
+	printer Printer
+	scanner Scanner
+}
+
+func (m MultiFunctionMachine) Print(d Document) {
+	m.printer.Print(d)
+}
+
 func main() {
-	rc := &Rectangle{2, 3}
-	UseIt(rc)
 
-	sq := NewSquare(5)
-	UseIt(sq)
 }
