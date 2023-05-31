@@ -1,134 +1,76 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
-// OCP
-// Open for extension, closed for modification
-// Specification
+// Liskov Substitution Principle
 
-type Color int
-
-const (
-	red Color = iota
-	green
-	blue
-)
-
-type Size int
-
-const (
-	small Size = iota
-	medium
-	large
-)
-
-type Product struct {
-	name  string
-	color Color
-	size  Size
+type Sized interface {
+	GetWidth() int
+	SetWidth(with int)
+	GetHeight() int
+	SetHeight(height int)
 }
 
-type Filter struct {
+type Rectangle struct {
+	width, height int
 }
 
-func (f *Filter) FilterByColor(products []Product, color Color) []*Product {
-	result := make([]*Product, 0)
-
-	for i, v := range products {
-		if v.color == color {
-			result = append(result, &products[i])
-		}
-	}
-	return result
+func (r *Rectangle) GetWidth() int {
+	return r.width
 }
 
-func (f *Filter) FilterBySize(products []Product, size Size) []*Product {
-	result := make([]*Product, 0)
-
-	for i, v := range products {
-		if v.size == size {
-			result = append(result, &products[i])
-		}
-	}
-	return result
+func (r *Rectangle) SetWidth(with int) {
+	r.width = with
 }
 
-func (f *Filter) FilterBySizeAndColor(produts []Product, size Size, color Color) []*Product {
-	result := make([]*Product, 0)
-
-	for i, v := range produts {
-		if v.size == size && v.color == color {
-			result = append(result, &produts[i])
-		}
-	}
-	return result
+func (r *Rectangle) GetHeight() int {
+	return r.height
 }
 
-type Specification interface {
-	IsSatisfied(p *Product) bool
+func (r *Rectangle) SetHeight(height int) {
+	r.height = height
 }
 
-type ColorSpecification struct {
-	color Color
+type Square struct {
+	Rectangle
 }
 
-func (c ColorSpecification) IsSatisfied(p *Product) bool {
-	return p.color == c.color
+func NewSquare(size int) *Square {
+	sq := Square{}
+	sq.width = size
+	sq.height = size
+	return &sq
 }
 
-type SizeSpecification struct {
-	size Size
+func (s *Square) SetWidth(width int) {
+	s.width = width
+	s.height = width
 }
 
-func (s SizeSpecification) IsSatisfied(p *Product) bool {
-	return p.size == s.size
+func (s *Square) SetHeight(height int) {
+	s.width = height
+	s.height = height
 }
 
-type AndSpecification struct {
-	first, second Specification
+type Square2 struct {
+	size int // width, height
 }
 
-func (a AndSpecification) IsSatisfied(p *Product) bool {
-	return a.first.IsSatisfied(p) && a.second.IsSatisfied(p)
+func (s *Square2) Rectangle() Rectangle {
+	return Rectangle{s.size, s.size}
 }
 
-type BetterFilter struct{}
-
-func (f *BetterFilter) Filter(products []Product, spec Specification) []*Product {
-	result := make([]*Product, 0)
-	for i, v := range products {
-		if spec.IsSatisfied(&v) {
-			result = append(result, &products[i])
-		}
-	}
-	return result
+func UseIt(sized Sized) {
+	width := sized.GetWidth()
+	sized.SetHeight(10)
+	expectedArea := 10 * width
+	actualArea := sized.GetWidth() * sized.GetHeight()
+	fmt.Print("Expected an area of ", expectedArea, ", but got ", actualArea, "\n")
 }
-
 func main() {
-	apple := Product{"Apple", green, small}
-	tree := Product{"Tree", green, large}
-	house := Product{"House", blue, large}
+	rc := &Rectangle{2, 3}
+	UseIt(rc)
 
-	products := []Product{apple, tree, house}
-	fmt.Printf("Green products (old):\n")
-	f := Filter{}
-	for _, v := range f.FilterByColor(products, green) {
-		fmt.Printf(" - %s is green\n", v.name)
-	}
-
-	fmt.Printf("Green products (new):\n")
-	greenSpec := ColorSpecification{green}
-	bf := BetterFilter{}
-	for _, v := range bf.Filter(products, greenSpec) {
-		fmt.Printf(" - %s is grren\n", v.name)
-	}
-
-	largeSpec := SizeSpecification{large}
-	lgSpec := AndSpecification{greenSpec, largeSpec}
-	fmt.Printf("Large green products:\n")
-	for _, v := range bf.Filter(products, lgSpec) {
-		fmt.Printf(" - %s is large and green\n", v.name)
-	}
+	sq := NewSquare(5)
+	UseIt(sq)
 }
