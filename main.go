@@ -1,95 +1,75 @@
 package main
 
-type Document struct {
+import "fmt"
+
+// Dependency Inversion Principle
+// HLM should not depend on LLM
+// Both should depend on abstractions
+
+type Relationship int
+
+const (
+	Parent Relationship = iota
+	Child
+	Sibling
+)
+
+type Person struct {
+	name string
 }
 
-type Machine interface {
-	Print(d Document)
-	Fax(d Document)
-	Scan(d Document)
+type Info struct {
+	from         *Person
+	relationship Relationship
+	to           *Person
 }
 
-type MultiFunctionPrinter struct {
+// low-level module
+type RelationshipBrowser interface {
+	FindAllChildrenOf(name string) []*Person
+}
+type Relationships struct {
+	relations []Info
 }
 
-func (m MultiFunctionPrinter) Print(d Document) {
-	//TODO implement me
-	panic("implement me")
+func (r *Relationships) FindAllChildrenOf(name string) []*Person {
+	result := make([]*Person, 0)
+
+	for i, v := range r.relations {
+		if v.relationship == Parent && v.from.name == name {
+			result = append(result, r.relations[i].to)
+		}
+	}
+	return result
 }
 
-func (m MultiFunctionPrinter) Fax(d Document) {
-	//TODO implement me
-	panic("implement me")
+func (r *Relationships) AddParentAndChild(parent, child *Person) {
+	r.relations = append(r.relations, Info{parent, Parent, child})
+	r.relations = append(r.relations, Info{child, Child, parent})
 }
 
-func (m MultiFunctionPrinter) Scan(d Document) {
-	//TODO implement me
-	panic("implement me")
+// high-level module
+type Research struct {
+	// break DIP
+	// relationships Relationships
+	browser RelationshipBrowser
 }
 
-type OldFashionedPrinter struct {
-}
-
-func (o OldFashionedPrinter) Print(d Document) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (o OldFashionedPrinter) Fax(d Document) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (o OldFashionedPrinter) Scan(d Document) {
-	//TODO implement me
-	panic("implement me")
-}
-
-// ISP
-type Printer interface {
-	Print(d Document)
-}
-
-type Scanner interface {
-	Scan(d Document)
-}
-
-type MyPrinter struct {
-}
-
-func (m MyPrinter) Print(d Document) {
-
-}
-
-type Photocopier struct {
-}
-
-func (p Photocopier) Scan(d Document) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (p Photocopier) Print(d Document) {
-	//TODO implement me
-	panic("implement me")
-}
-
-type MultiFunctionDevice interface {
-	Printer
-	Scanner
-	// Fax
-}
-
-// decorator
-type MultiFunctionMachine struct {
-	printer Printer
-	scanner Scanner
-}
-
-func (m MultiFunctionMachine) Print(d Document) {
-	m.printer.Print(d)
+func (r *Research) Investigate() {
+	for _, p := range r.browser.FindAllChildrenOf("John") {
+		fmt.Println("John has a child called", p.name)
+	}
 }
 
 func main() {
+	parent := Person{"John"}
+	child1 := Person{"Chris"}
+	child2 := Person{"Matt"}
 
+	relationships := Relationships{}
+	relationships.AddParentAndChild(&parent, &child1)
+	relationships.AddParentAndChild(&parent, &child2)
+
+	r := Research{&relationships}
+	r.Investigate()
 }
