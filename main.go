@@ -1,75 +1,86 @@
 package main
 
-import "fmt"
-
-// Dependency Inversion Principle
-// HLM should not depend on LLM
-// Both should depend on abstractions
-
-type Relationship int
-
-const (
-	Parent Relationship = iota
-	Child
-	Sibling
+import (
+	"fmt"
+	"strings"
 )
 
-type Person struct {
-	name string
+const (
+	indentSize = 2
+)
+
+type HtmlElement struct {
+	name, text string
+	elements   []HtmlElement
 }
 
-type Info struct {
-	from         *Person
-	relationship Relationship
-	to           *Person
+func (e *HtmlElement) String() string {
+	return e.string(0)
 }
 
-// low-level module
-type RelationshipBrowser interface {
-	FindAllChildrenOf(name string) []*Person
-}
-type Relationships struct {
-	relations []Info
-}
-
-func (r *Relationships) FindAllChildrenOf(name string) []*Person {
-	result := make([]*Person, 0)
-
-	for i, v := range r.relations {
-		if v.relationship == Parent && v.from.name == name {
-			result = append(result, r.relations[i].to)
-		}
+func (e *HtmlElement) string(indent int) string {
+	sb := strings.Builder{}
+	i := strings.Repeat(" ", indentSize*indent)
+	sb.WriteString(fmt.Sprintf("%s<%s>\n", i, e.name))
+	if len(e.text) > 0 {
+		sb.WriteString(strings.Repeat(" ", indentSize*(indent+1)))
+		sb.WriteString(e.text)
+		sb.WriteString("\n")
 	}
-	return result
-}
-
-func (r *Relationships) AddParentAndChild(parent, child *Person) {
-	r.relations = append(r.relations, Info{parent, Parent, child})
-	r.relations = append(r.relations, Info{child, Child, parent})
-}
-
-// high-level module
-type Research struct {
-	// break DIP
-	// relationships Relationships
-	browser RelationshipBrowser
-}
-
-func (r *Research) Investigate() {
-	for _, p := range r.browser.FindAllChildrenOf("John") {
-		fmt.Println("John has a child called", p.name)
+	for _, el := range e.elements {
+		sb.WriteString(el.string(indent + 1))
 	}
+	sb.WriteString(fmt.Sprintf("%s</%s>\n", i, e.name))
+	return sb.String()
+}
+
+type HtmlBuilder struct {
+	rootName string
+	root     HtmlElement
+}
+
+func NewHtmlBuilder(rootName string) *HtmlBuilder {
+	b := HtmlBuilder{rootName, HtmlElement{rootName, "", []HtmlElement{}}}
+	return &b
+}
+
+func (b *HtmlBuilder) String() string {
+	return b.root.String()
+}
+
+func (b *HtmlBuilder) AddChild(childName, childText string) {
+	e := HtmlElement{childName, childText, []HtmlElement{}}
+	b.root.elements = append(b.root.elements, e)
+}
+
+func (b *HtmlBuilder) AddChildFluent(childName, childText string) *HtmlBuilder {
+	e := HtmlElement{childName, childText, []HtmlElement{}}
+	b.root.elements = append(b.root.elements, e)
+	return b
 }
 
 func main() {
-	parent := Person{"John"}
-	child1 := Person{"Chris"}
-	child2 := Person{"Matt"}
+	hello := "Hello"
+	sb := strings.Builder{}
+	sb.WriteString("<p>")
+	sb.WriteString(hello)
+	sb.WriteString("</p>")
+	fmt.Println(sb.String())
 
-	relationships := Relationships{}
-	relationships.AddParentAndChild(&parent, &child1)
-	relationships.AddParentAndChild(&parent, &child2)
+	words := []string{"hello", "world"}
+	sb.Reset()
+	//<ul><li>...</li><li>...</li></ul>
+	sb.WriteString("<ul>")
+	for _, v := range words {
+		sb.WriteString("<li>")
+		sb.WriteString(v)
+		sb.WriteString("</li>")
+	}
+	sb.WriteString("</ul>")
+	fmt.Println(sb.String())
 
-	r := Research{&relationships}
-	r.Investigate()
+	b := NewHtmlBuilder("ul")
+	b.AddChildFluent("li", "hello").
+		AddChildFluent("li", "world")
+	fmt.Println(b.String())
 }
